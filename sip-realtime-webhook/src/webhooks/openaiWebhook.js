@@ -37,12 +37,30 @@ export default async function openaiWebhook(req, res) {
 
     if (event.type === "realtime.call.incoming") {
       try {
+        const callData = event.data;
+        const callId = callData.id || callData.call_id;
         const callerPhoneNumber =
-          event.from || event.caller_number || "Unknown";
-        console.log("📞 Incoming call from:", callerPhoneNumber);
-        console.log("📞 Call ID:", event.call_id);
+          callData.from ||
+          callData.caller_number ||
+          callData.caller ||
+          "Unknown";
 
-        await acceptCall(event.call_id, callerPhoneNumber);
+        console.log("📞 Incoming call:");
+        console.log("- Call ID:", callId);
+        console.log("- Caller:", callerPhoneNumber);
+        console.log("- Full call data:", JSON.stringify(callData, null, 2));
+
+        if (!callId) {
+          console.error("❌ No call_id found in event data");
+          return res.status(200).json({ received: true, error: "No call_id" });
+        }
+
+        if (callId.startsWith("rsstarted-")) {
+          console.log("⚠️ Test event detected - skipping call acceptance");
+          return res.status(200).json({ received: true, test_event: true });
+        }
+
+        await acceptCall(callId, callerPhoneNumber);
         console.log("✅ Call accepted successfully");
       } catch (err) {
         console.error("❌ Accept call failed:", err.message);
