@@ -1,7 +1,8 @@
 export function createSessionConfig(callerPhoneNumber) {
   return {
     type: "realtime",
-    model: process.env.OPENAI_REALTIME_MODEL || "gpt-4o-realtime-preview",
+    model:
+      process.env.OPENAI_REALTIME_MODEL || "gpt-4o-realtime-preview-2024-12-17",
     tool_choice: "auto",
     tools: [
       {

@@ -6,17 +6,18 @@ export default async function openaiWebhook(req, res) {
   const secret = process.env.OPENAI_WEBHOOK_SECRET;
 
   if (!verifySignature(req.rawBody, signature, secret)) {
+    console.error("❌ Invalid webhook signature");
     return res.status(401).send("Invalid signature");
   }
 
   const event = req.body;
+  console.log("📨 Webhook event received:", event.type);
 
   if (event.type === "realtime.call.incoming") {
     try {
       const callerPhoneNumber = event.from || event.caller_number || "Unknown";
 
       console.log("📞 Incoming call from:", callerPhoneNumber);
-      console.log("📋 Full event:", JSON.stringify(event, null, 2));
 
       await acceptCall(event.call_id, callerPhoneNumber);
 
@@ -31,7 +32,10 @@ export default async function openaiWebhook(req, res) {
 }
 
 function verifySignature(payload, signature, secret) {
-  if (!signature || !secret) return false;
+  if (!signature || !secret) {
+    console.warn("⚠️ Missing signature or secret");
+    return false;
+  }
 
   const expected = crypto
     .createHmac("sha256", secret)

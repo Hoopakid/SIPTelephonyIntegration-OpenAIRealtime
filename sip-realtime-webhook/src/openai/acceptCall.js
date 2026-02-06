@@ -25,7 +25,7 @@ export async function acceptCall(callId, callerPhoneNumber) {
   }
 
   const responseData = await res.json();
-  console.log("✅ Call accepted, session started:", responseData);
+  console.log("✅ Call accepted, session started");
 
   return responseData;
 }
