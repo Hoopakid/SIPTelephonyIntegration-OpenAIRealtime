@@ -1,7 +1,11 @@
 import fetch from "node-fetch";
-import { sessionConfig } from "../config/sessionConfig.js";
+import { createSessionConfig } from "../config/sessionConfig.js";
 
-export async function acceptCall(callId) {
+export async function acceptCall(callId, callerPhoneNumber) {
+  const sessionConfig = createSessionConfig(callerPhoneNumber);
+
+  console.log("🔧 Session config created for:", callerPhoneNumber);
+
   const res = await fetch(
     `https://api.openai.com/v1/realtime/calls/${callId}/accept`,
     {
@@ -16,6 +20,12 @@ export async function acceptCall(callId) {
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(err);
+    console.error("❌ OpenAI API error:", err);
+    throw new Error(`Failed to accept call: ${err}`);
   }
+
+  const responseData = await res.json();
+  console.log("✅ Call accepted, session started:", responseData);
+
+  return responseData;
 }

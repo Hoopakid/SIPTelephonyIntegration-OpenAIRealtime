@@ -32,9 +32,7 @@ async function getCrmToken() {
   }
 
   const data = await res.json();
-
   cachedToken = data.access_token;
-
   tokenExpiresAt = Date.now() + (data.expires_in || 3600) * 1000;
 
   return cachedToken;

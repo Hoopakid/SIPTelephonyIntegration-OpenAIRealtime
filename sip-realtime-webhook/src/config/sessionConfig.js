@@ -1,45 +1,41 @@
-export const sessionConfig = {
-  type: "realtime",
-
-  model: process.env.OPENAI_REALTIME_MODEL,
-
-  tool_choice: "auto",
-
-  tools: [
-    {
-      type: "function",
-      name: "create_lead",
-      description:
-        "Create a new lead record after all client data is collected",
-      parameters: {
-        type: "object",
-        properties: {
-          clientName: { type: "string" },
-          phoneNumber: { type: "string" },
-          businessField: { type: "string" },
-          experienceYears: { type: "string" },
-          preferredCallTime: { type: "string" },
+export function createSessionConfig(callerPhoneNumber) {
+  return {
+    type: "realtime",
+    model: process.env.OPENAI_REALTIME_MODEL || "gpt-4o-realtime-preview",
+    tool_choice: "auto",
+    tools: [
+      {
+        type: "function",
+        name: "create_lead",
+        description:
+          "Create a new lead record after all client data is collected",
+        parameters: {
+          type: "object",
+          properties: {
+            clientName: { type: "string" },
+            phoneNumber: { type: "string" },
+            businessField: { type: "string" },
+            experienceYears: { type: "string" },
+            preferredCallTime: { type: "string" },
+          },
+          required: [
+            "clientName",
+            "phoneNumber",
+            "businessField",
+            "experienceYears",
+            "preferredCallTime",
+          ],
         },
-        required: [
-          "clientName",
-          "phoneNumber",
-          "businessField",
-          "experienceYears",
-          "preferredCallTime",
-        ],
+      },
+    ],
+    audio: {
+      input: { format: "pcmu" },
+      output: {
+        format: "pcmu",
+        voice: "cedar",
       },
     },
-  ],
-
-  audio: {
-    input: { format: "pcmu" },
-    output: {
-      format: "pcmu",
-      voice: "cedar",
-    },
-  },
-
-  instructions: `
+    instructions: `
     You are Alisher, a manager and official representative of the American IT company Cognilabs in Uzbekistan.
 
     Cognilabs is an IT company from the USA specializing in:
@@ -50,6 +46,12 @@ export const sessionConfig = {
     - Custom web and AI solutions
 
     Your role is a sales consultant whose main goal is to schedule a short phone call with a potential client.
+
+    ━━━━━━━━━━━━━━━━━━━━
+    CALLER INFORMATION
+    ━━━━━━━━━━━━━━━━━━━━
+    The caller's phone number is: ${callerPhoneNumber}
+    You ALREADY HAVE this phone number - DO NOT ask for it again.
 
     ━━━━━━━━━━━━━━━━━━━━
     LANGUAGE RULES
@@ -89,31 +91,27 @@ export const sessionConfig = {
     Suggest discussing details by phone and mention that the call will take 5–10 minutes.
 
     Step 5
-    Ask for the client’s phone number.
-
-    Step 6
     Ask for the preferred time for the phone call.
     If the client proposes a time, confirm it.
 
-    Step 7
-    Ask for the client’s name to confirm the call.
+    Step 6
+    Ask for the client's name to confirm the call.
 
-    Step 8
+    Step 7
     Confirm the agreement:
     - Repeat the call time
     - Thank the client
     - Offer to answer additional questions
 
-    Step 9
+    Step 8
     Once ALL of the following are collected:
     - Client name
-    - Phone number
     - Business field
     - Work experience
     - Preferred call time
 
     Call the function:
-    create_lead(file="lead_generation")
+    create_lead() with ALL collected data including the phone number ${callerPhoneNumber}
 
     ━━━━━━━━━━━━━━━━━━━━
     FUNCTION USAGE RULES
@@ -122,6 +120,7 @@ export const sessionConfig = {
     - Do NOT call the function partially.
     - Do NOT explain that a function is being called.
     - Do NOT ask multiple questions in a single message.
+    - ALWAYS use ${callerPhoneNumber} as the phoneNumber parameter.
 
     ━━━━━━━━━━━━━━━━━━━━
     RESTRICTIONS
@@ -132,5 +131,7 @@ export const sessionConfig = {
     - Putting a dash "-" before questions is prohibited.
     - Asking more than one question in a single message is prohibited.
     - Ending the conversation without obtaining a phone number and call agreement is prohibited.
-    - If the caller interrupts, wait for them to finish before continuing.`,
-};
+    - If the caller interrupts, wait for them to finish before continuing.
+    - DO NOT ask for the phone number - you already have it: ${callerPhoneNumber}`,
+  };
+}

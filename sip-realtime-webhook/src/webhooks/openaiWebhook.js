@@ -13,9 +13,17 @@ export default async function openaiWebhook(req, res) {
 
   if (event.type === "realtime.call.incoming") {
     try {
-      await acceptCall(event.call_id);
+      const callerPhoneNumber = event.from || event.caller_number || "Unknown";
+
+      console.log("📞 Incoming call from:", callerPhoneNumber);
+      console.log("📋 Full event:", JSON.stringify(event, null, 2));
+
+      await acceptCall(event.call_id, callerPhoneNumber);
+
+      console.log("✅ Call accepted successfully");
     } catch (err) {
-      console.error("Accept call failed:", err.message);
+      console.error("❌ Accept call failed:", err.message);
+      console.error(err.stack);
     }
   }
 
@@ -30,8 +38,5 @@ function verifySignature(payload, signature, secret) {
     .update(payload)
     .digest("hex");
 
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expected)
-  );
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
 }
