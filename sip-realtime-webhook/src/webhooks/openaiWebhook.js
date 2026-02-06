@@ -3,52 +3,60 @@ import { acceptCall } from "../openai/acceptCall.js";
 
 export default async function openaiWebhook(req, res) {
   try {
+    console.log("=== INCOMING REQUEST ===");
+    console.log("All headers:", JSON.stringify(req.headers, null, 2));
+    console.log("Body type:", typeof req.body);
+    console.log("Is Buffer?:", Buffer.isBuffer(req.body));
+    console.log("Body:", req.body);
+
     const signature = req.headers["openai-signature"];
     const secret = process.env.OPENAI_WEBHOOK_SECRET;
-
     const rawBody = req.body;
 
     console.log("🔍 Debug info:");
     console.log("- Signature received:", signature ? "Yes" : "No");
+    console.log("- Actual signature value:", signature);
     console.log("- Secret configured:", secret ? "Yes" : "No");
+    console.log(
+      "- Secret preview:",
+      secret ? secret.substring(0, 10) + "..." : "None",
+    );
     console.log("- Raw body type:", typeof rawBody);
-    console.log("- Raw body length:", rawBody?.length);
+    console.log("- Is Buffer:", Buffer.isBuffer(rawBody));
+
+    if (!Buffer.isBuffer(rawBody)) {
+      console.error("❌ Body is not a buffer! Cannot verify signature.");
+      console.error("Body content:", rawBody);
+      return res.status(500).json({ error: "Body parsing error" });
+    }
 
     if (!verifySignature(rawBody, signature, secret)) {
       console.error("❌ Invalid webhook signature");
-      console.error("Received signature:", signature);
-      console.error("Expected signature would be computed from body");
       return res.status(401).send("Invalid signature");
     }
 
     const event = JSON.parse(rawBody.toString("utf8"));
 
     console.log("📨 Webhook event received:", event.type);
-    console.log("📋 Full event:", JSON.stringify(event, null, 2));
 
     if (event.type === "realtime.call.incoming") {
       try {
         const callerPhoneNumber =
           event.from || event.caller_number || "Unknown";
         console.log("📞 Incoming call from:", callerPhoneNumber);
-        console.log("📞 Call ID:", event.call_id);
 
         await acceptCall(event.call_id, callerPhoneNumber);
         console.log("✅ Call accepted successfully");
       } catch (err) {
         console.error("❌ Accept call failed:", err.message);
-        console.error("Stack trace:", err.stack);
-        return res.status(200).json({
-          received: true,
-          error: "Failed to accept call",
-        });
+        console.error(err.stack);
       }
     }
 
     res.status(200).json({ received: true });
   } catch (error) {
     console.error("❌ Webhook handler error:", error.message);
-    console.error("Stack trace:", error.stack);
+    console.error(error.stack);
     res.status(500).json({ error: "Internal server error" });
   }
 }
