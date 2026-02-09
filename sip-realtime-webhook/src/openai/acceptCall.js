@@ -1,9 +1,9 @@
 import fetch from "node-fetch";
 import { createSessionConfig } from "../config/sessionConfig.js";
+import { setupRealtimeSocket } from "./realtimeSocket.js";
 
 export async function acceptCall(callId, callerPhoneNumber) {
   const sessionConfig = createSessionConfig(callerPhoneNumber);
-
   console.log("🔧 Session config created for:", callerPhoneNumber);
 
   const res = await fetch(
@@ -26,6 +26,8 @@ export async function acceptCall(callId, callerPhoneNumber) {
 
   const responseData = await res.json();
   console.log("✅ Call accepted, session started");
+
+  setupRealtimeSocket(callId);
 
   return responseData;
 }

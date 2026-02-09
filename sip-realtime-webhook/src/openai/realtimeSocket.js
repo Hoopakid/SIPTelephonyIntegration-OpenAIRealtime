@@ -14,7 +14,6 @@ export function setupRealtimeSocket(callId) {
 
   ws.on("message", async (msg) => {
     const event = JSON.parse(msg.toString());
-
     console.log("📨 Event received:", event.type);
 
     if (event.type === "response.function_call_arguments.done") {
@@ -46,7 +45,6 @@ export function setupRealtimeSocket(callId) {
           );
         } catch (error) {
           console.error("❌ Error handling create_lead:", error);
-
           ws.send(
             JSON.stringify({
               type: "conversation.item.create",
